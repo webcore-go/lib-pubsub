@@ -3,8 +3,8 @@ package pubsub
 import (
 	"context"
 
-	"github.com/webcore-go/webcore/app/config"
-	"github.com/webcore-go/webcore/app/loader"
+	"github.com/webcore-go/webcore/infra/config"
+	"github.com/webcore-go/webcore/port"
 )
 
 type PubSubLoader struct {
@@ -19,7 +19,7 @@ func (a *PubSubLoader) Name() string {
 	return a.name
 }
 
-func (l *PubSubLoader) Init(args ...any) (loader.Library, error) {
+func (l *PubSubLoader) Init(args ...any) (port.Library, error) {
 	context := args[0].(context.Context)
 	config := args[1].(config.PubSubConfig)
 

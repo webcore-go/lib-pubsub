@@ -7,10 +7,10 @@ import (
 
 	"cloud.google.com/go/pubsub/v2"
 	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
-	"github.com/webcore-go/webcore/app/config"
 	"github.com/webcore-go/webcore/app/helper"
-	"github.com/webcore-go/webcore/app/loader"
-	"github.com/webcore-go/webcore/app/logger"
+	"github.com/webcore-go/webcore/infra/config"
+	"github.com/webcore-go/webcore/infra/logger"
+	"github.com/webcore-go/webcore/port"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
@@ -43,7 +43,7 @@ func (p *PubSubMessage) GetAttributes() map[string]string {
 type PubSub struct {
 	Client    *pubsub.Client
 	Config    config.PubSubConfig
-	Receivers []loader.PubSubReceiver
+	Receivers []port.PubSubReceiver
 }
 
 // NewPubSub creates a new PubSub connection
@@ -74,7 +74,7 @@ func NewPubSub(ctx context.Context, config config.PubSubConfig) (*PubSub, error)
 	return &PubSub{
 		Client:    client,
 		Config:    config,
-		Receivers: []loader.PubSubReceiver{},
+		Receivers: []port.PubSubReceiver{},
 	}, nil
 }
 
@@ -117,7 +117,7 @@ func (ps *PubSub) Publish(ctx context.Context, message any, attributes map[strin
 	return ps.PublishMessage(ctx, []byte(str), attributes)
 }
 
-func (ps *PubSub) RegisterReceiver(receiver loader.PubSubReceiver) {
+func (ps *PubSub) RegisterReceiver(receiver port.PubSubReceiver) {
 	ps.Receivers = append(ps.Receivers, receiver)
 }
 
@@ -138,7 +138,7 @@ func (ps *PubSub) StartReceiving(ctx context.Context) {
 				Attributes:  msg.Attributes,
 			}
 			for _, c := range ps.Receivers {
-				go c.Consume(ctx, []loader.IPubSubMessage{m})
+				go c.Consume(ctx, []port.IPubSubMessage{m})
 			}
 		})
 
