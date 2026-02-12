@@ -2,7 +2,11 @@ package pubsub
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/pubsub/v2"
@@ -62,8 +66,62 @@ func NewPubSub(ctx context.Context, config config.PubSubConfig) (*PubSub, error)
 	// 	opts = append(opts, option.WithEndpoint(config.EmulatorHost), option.WithoutAuthentication())
 	// }
 
+	// Handle credentials: if file path is not available but config.Credentials is provided,
+	// create a temporary credentials file
 	if config.CredentialsPath != "" {
+		// Check if the credentials file exists
+		if _, err := os.Stat(config.CredentialsPath); os.IsNotExist(err) {
+			// File doesn't exist, check if we have credentials data in config
+			if config.Credentials != nil {
+				config.Credentials.ProjectID = config.ProjectID
+				config.Credentials.PrivateKey = strings.ReplaceAll(config.Credentials.PrivateKey, "\\n", "\n")
+				// Create the directory if it doesn't exist
+				dir := filepath.Dir(config.CredentialsPath)
+				if err := os.MkdirAll(dir, 0755); err != nil {
+					return nil, fmt.Errorf("failed to create credentials directory: %v", err)
+				}
+
+				// Marshal the credentials to JSON
+				credJSON, err := json.MarshalIndent(config.Credentials, "", "  ")
+				if err != nil {
+					return nil, fmt.Errorf("failed to marshal credentials: %v", err)
+				}
+
+				// Write the credentials to the file
+				if err := os.WriteFile(config.CredentialsPath, credJSON, 0600); err != nil {
+					return nil, fmt.Errorf("failed to write credentials file: %v", err)
+				}
+
+				logger.Info("Created credentials file from config", "path", config.CredentialsPath)
+			} else {
+				return nil, fmt.Errorf("credentials file not found at %s and no credentials data provided in config", config.CredentialsPath)
+			}
+		}
 		opts = append(opts, option.WithCredentialsFile(config.CredentialsPath))
+	} else if config.Credentials != nil {
+		config.Credentials.ProjectID = config.ProjectID
+		config.Credentials.PrivateKey = strings.ReplaceAll(config.Credentials.PrivateKey, "\\n", "\n")
+
+		// No credentials path provided, but we have credentials data
+		// Create a temporary file for the credentials
+		tempDir := os.TempDir()
+		tempCredPath := filepath.Join(tempDir, fmt.Sprintf("pubsub-credentials-%s.json", config.ProjectID))
+
+		// Marshal the credentials to JSON
+		credJSON, err := json.MarshalIndent(config.Credentials, "", "  ")
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal credentials: %v", err)
+		}
+
+		// Write the credentials to the temporary file
+		if err := os.WriteFile(tempCredPath, credJSON, 0600); err != nil {
+			return nil, fmt.Errorf("failed to write temporary credentials file: %v", err)
+		}
+
+		logger.Info("Created temporary credentials file from config", "path", tempCredPath)
+		opts = append(opts, option.WithCredentialsFile(tempCredPath))
+	} else {
+		return nil, fmt.Errorf("no credentials provided: either credentials_path or credentials_data must be specified")
 	}
 
 	client, err = pubsub.NewClient(ctx, config.ProjectID, opts...)
