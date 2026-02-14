@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	cloud.google.com/go/pubsub/v2 v2.0.0
 	github.com/goccy/go-json v0.10.2
-	github.com/webcore-go/webcore v0.0.10
+	github.com/webcore-go/webcore v0.0.11
 	google.golang.org/api v0.247.0
 )
 
