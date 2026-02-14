@@ -2,12 +2,13 @@ package pubsub
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/goccy/go-json"
 
 	"cloud.google.com/go/pubsub/v2"
 	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"

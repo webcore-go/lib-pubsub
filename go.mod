@@ -4,6 +4,7 @@ go 1.24.0
 
 require (
 	cloud.google.com/go/pubsub/v2 v2.0.0
+	github.com/goccy/go-json v0.10.2
 	github.com/webcore-go/webcore v0.0.10
 	google.golang.org/api v0.247.0
 )
@@ -20,7 +21,6 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/gofiber/fiber/v2 v2.52.11 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/uuid v1.6.0 // indirect
