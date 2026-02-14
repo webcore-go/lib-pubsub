@@ -195,8 +195,22 @@ func (ps *PubSub) StartReceiving(ctx context.Context) {
 				PublishTime: msg.PublishTime,
 				Attributes:  msg.Attributes,
 			}
+
+			ackDone := false
 			for _, c := range ps.Receivers {
-				go c.Consume(ctx, []port.IPubSubMessage{m})
+				ack, err := c.Consume(ctx, []port.IPubSubMessage{m})
+				if !ackDone && err == nil && len(ack) > 0 {
+					if val, ok := ack[m.ID]; ok && val {
+						ackDone = true
+						msg.Ack()
+						logger.Debug("Message processed and acknowledged", "messageID", msg.ID)
+					}
+				}
+			}
+
+			if !ackDone {
+				msg.Nack()
+				logger.Debug("Message not processed and not acknowledged", "messageID", msg.ID)
 			}
 		})
 
